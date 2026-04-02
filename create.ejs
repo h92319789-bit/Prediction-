@@ -1,0 +1,159 @@
+<%
+  const title = 'Create Prediction';
+%>
+<%- include('partials/header') %>
+
+<div class="container">
+  <div class="create-layout">
+    <div class="create-main">
+      <div class="card">
+        <div class="card-header-section">
+          <h1><i class="fas fa-plus-circle"></i> Create a Prediction</h1>
+          <p>Make a prediction about a future event and stake your credits on it.</p>
+        </div>
+
+        <% if (typeof errors !== 'undefined' && errors && errors.length > 0) { %>
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            <ul class="error-list">
+              <% errors.forEach(function(err) { %>
+                <li><%= err %></li>
+              <% }); %>
+            </ul>
+          </div>
+        <% } %>
+
+        <form action="/predictions/create" method="POST" class="create-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+          <div class="form-group">
+            <label for="title" class="form-label">
+              <i class="fas fa-heading"></i> Prediction Title
+            </label>
+            <input type="text" id="title" name="title" class="form-input" placeholder="e.g., Bitcoin will reach $100k by end of 2026" required minlength="5" maxlength="200" value="<%= typeof body !== 'undefined' && body ? body.title || '' : '' %>">
+            <span class="form-hint">5-200 characters. Be specific and clear.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="description" class="form-label">
+              <i class="fas fa-align-left"></i> Description
+            </label>
+            <textarea id="description" name="description" class="form-input form-textarea" placeholder="Provide context, sources, and reasoning for your prediction..." required minlength="10" maxlength="2000" rows="6"><%= typeof body !== 'undefined' && body ? body.description || '' : '' %></textarea>
+            <div class="form-hint-row">
+              <span class="form-hint">10-2000 characters</span>
+              <span class="char-counter" id="descCounter">0 / 2000</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="category" class="form-label">
+              <i class="fas fa-tag"></i> Category
+            </label>
+            <select id="category" name="category" class="form-select" required>
+              <option value="">Select a category</option>
+              <% categories.forEach(function(cat) { %>
+                <option value="<%= cat %>" <%= (typeof body !== 'undefined' && body && body.category === cat) ? 'selected' : '' %>><%= cat %></option>
+              <% }); %>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="probability" class="form-label">
+              <i class="fas fa-chart-pie"></i> Estimated Probability
+            </label>
+            <div class="probability-input-group">
+              <input type="range" id="probability" name="probability" min="1" max="99" value="<%= (typeof body !== 'undefined' && body && body.probability) ? body.probability : 50 %>" class="form-range">
+              <div class="probability-display" id="probabilityDisplay">
+                <span id="probabilityValue">50</span>%
+              </div>
+            </div>
+            <div class="probability-bar-preview">
+              <div class="probability-fill-preview" id="probabilityBar" style="width: 50%"></div>
+            </div>
+            <span class="form-hint">How likely do you think this is? (1-99%)</span>
+          </div>
+
+          <div class="form-group">
+            <label for="stake" class="form-label">
+              <i class="fas fa-coins"></i> Stake Amount
+            </label>
+            <input type="number" id="stake" name="stake" class="form-input" min="1" max="<%= user.credits %>" value="<%= (typeof body !== 'undefined' && body && body.stake) ? body.stake : 10 %>" required>
+            <span class="form-hint">Your current balance: <strong><%= user.credits %> credits</strong></span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg">
+            <i class="fas fa-rocket"></i> Create Prediction
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="create-sidebar">
+      <div class="card tips-card">
+        <h3><i class="fas fa-lightbulb"></i> Tips for Great Predictions</h3>
+        <ul class="tips-list">
+          <li>
+            <i class="fas fa-check-circle tip-icon"></i>
+            <span><strong>Be specific</strong> &mdash; Include clear criteria for resolution</span>
+          </li>
+          <li>
+            <i class="fas fa-check-circle tip-icon"></i>
+            <span><strong>Set a timeframe</strong> &mdash; When should this be evaluated?</span>
+          </li>
+          <li>
+            <i class="fas fa-check-circle tip-icon"></i>
+            <span><strong>Provide context</strong> &mdash; Link sources and explain reasoning</span>
+          </li>
+          <li>
+            <i class="fas fa-check-circle tip-icon"></i>
+            <span><strong>Be objective</strong> &mdash; Define measurable outcomes</span>
+          </li>
+          <li>
+            <i class="fas fa-check-circle tip-icon"></i>
+            <span><strong>Stake wisely</strong> &mdash; Higher stakes attract more bettors</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card guidelines-card">
+        <h3><i class="fas fa-info-circle"></i> Guidelines</h3>
+        <ul class="guidelines-list">
+          <li>Predictions must be about future verifiable events</li>
+          <li>No offensive, illegal, or harmful content</li>
+          <li>Don't predict things already known</li>
+          <li>Minimum stake: 1 credit</li>
+          <li>Once created, predictions cannot be deleted</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const desc = document.getElementById('description');
+    const counter = document.getElementById('descCounter');
+    const probSlider = document.getElementById('probability');
+    const probValue = document.getElementById('probabilityValue');
+    const probBar = document.getElementById('probabilityBar');
+
+    if (desc && counter) {
+      function updateCounter() {
+        counter.textContent = desc.value.length + ' / 2000';
+      }
+      desc.addEventListener('input', updateCounter);
+      updateCounter();
+    }
+
+    if (probSlider && probValue && probBar) {
+      function updateProb() {
+        probValue.textContent = probSlider.value;
+        probBar.style.width = probSlider.value + '%';
+      }
+      probSlider.addEventListener('input', updateProb);
+      updateProb();
+    }
+  });
+</script>
+
+<%- include('partials/footer') %>

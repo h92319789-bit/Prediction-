@@ -1,0 +1,99 @@
+<%
+  const title = 'Notifications';
+  function timeAgo(date) {
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + 'm ago';
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + 'h ago';
+    const days = Math.floor(hours / 24);
+    if (days < 30) return days + 'd ago';
+    const months = Math.floor(days / 30);
+    if (months < 12) return months + 'mo ago';
+    return Math.floor(months / 12) + 'y ago';
+  }
+  function notifIcon(type) {
+    const icons = {
+      'bet': 'fa-hand-point-up',
+      'resolution': 'fa-flag-checkered',
+      'payout': 'fa-coins',
+      'welcome': 'fa-star',
+      'system': 'fa-info-circle',
+      'admin': 'fa-shield-alt'
+    };
+    return icons[type] || 'fa-bell';
+  }
+%>
+<%- include('partials/header') %>
+
+<div class="container">
+  <div class="page-header notifications-header">
+    <div>
+      <h1><i class="fas fa-bell"></i> Notifications</h1>
+    </div>
+    <form action="/notifications/read-all" method="POST" class="mark-all-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="btn btn-outline btn-sm">
+        <i class="fas fa-check-double"></i> Mark all as read
+      </button>
+    </form>
+  </div>
+
+  <% if (notifications.length === 0) { %>
+    <div class="empty-state">
+      <i class="fas fa-bell-slash empty-icon"></i>
+      <h3>No notifications</h3>
+      <p>You're all caught up! New notifications will appear here.</p>
+    </div>
+  <% } else { %>
+    <div class="notifications-list">
+      <% notifications.forEach(function(notif) { %>
+        <% if (notif.link) { %>
+          <a href="<%= notif.link %>" class="notification-item <%= !notif.read ? 'notification-unread' : '' %>">
+        <% } else { %>
+          <div class="notification-item <%= !notif.read ? 'notification-unread' : '' %>">
+        <% } %>
+            <div class="notification-icon-wrapper">
+              <i class="fas <%= notifIcon(notif.type) %>"></i>
+            </div>
+            <div class="notification-content">
+              <p class="notification-message"><%= notif.message %></p>
+              <span class="notification-time"><%= timeAgo(notif.created_at) %></span>
+            </div>
+            <% if (!notif.read) { %>
+              <span class="notification-dot"></span>
+            <% } %>
+        <% if (notif.link) { %>
+          </a>
+        <% } else { %>
+          </div>
+        <% } %>
+      <% }); %>
+    </div>
+
+    <% if (totalPages > 1) { %>
+      <div class="pagination">
+        <% if (page > 1) { %>
+          <a href="?page=<%= page - 1 %>" class="pagination-btn">
+            <i class="fas fa-chevron-left"></i> Prev
+          </a>
+        <% } %>
+        <% for (let i = 1; i <= totalPages; i++) { %>
+          <% if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) { %>
+            <a href="?page=<%= i %>" class="pagination-btn <%= i === page ? 'active' : '' %>"><%= i %></a>
+          <% } else if (i === page - 3 || i === page + 3) { %>
+            <span class="pagination-ellipsis">&hellip;</span>
+          <% } %>
+        <% } %>
+        <% if (page < totalPages) { %>
+          <a href="?page=<%= page + 1 %>" class="pagination-btn">
+            Next <i class="fas fa-chevron-right"></i>
+          </a>
+        <% } %>
+      </div>
+    <% } %>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,165 @@
+<%
+  const title = profile.username + "'s Profile";
+  function timeAgo(date) {
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + 'm ago';
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + 'h ago';
+    const days = Math.floor(hours / 24);
+    if (days < 30) return days + 'd ago';
+    const months = Math.floor(days / 30);
+    if (months < 12) return months + 'mo ago';
+    return Math.floor(months / 12) + 'y ago';
+  }
+  function formatDate(date) {
+    return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+%>
+<%- include('partials/header') %>
+
+<div class="container">
+  <div class="profile-header-card">
+    <div class="profile-avatar">
+      <i class="fas fa-user-circle"></i>
+    </div>
+    <div class="profile-info">
+      <h1 class="profile-username"><%= profile.username %></h1>
+      <% if (profile.bio) { %>
+        <p class="profile-bio"><%= profile.bio %></p>
+      <% } else { %>
+        <p class="profile-bio profile-bio-empty">No bio yet.</p>
+      <% } %>
+      <p class="profile-joined"><i class="fas fa-calendar-alt"></i> Member since <%= formatDate(profile.created_at) %></p>
+    </div>
+    <div class="profile-actions">
+      <% if (isOwner) { %>
+        <div class="profile-balance">
+          <i class="fas fa-coins"></i>
+          <span class="balance-amount"><%= profile.credits %></span>
+          <span class="balance-label">credits</span>
+        </div>
+        <a href="/profile/<%= profile.username %>/edit" class="btn btn-outline"><i class="fas fa-edit"></i> Edit Profile</a>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value"><%= stats.totalPredictions || 0 %></div>
+      <div class="stat-label"><i class="fas fa-crystal-ball"></i> Predictions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><%= stats.winRate != null ? stats.winRate + '%' : 'N/A' %></div>
+      <div class="stat-label"><i class="fas fa-trophy"></i> Win Rate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><%= stats.totalBets || 0 %></div>
+      <div class="stat-label"><i class="fas fa-hand-point-up"></i> Bets Placed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><%= stats.creditsEarned || 0 %></div>
+      <div class="stat-label"><i class="fas fa-coins"></i> Credits Earned</div>
+    </div>
+  </div>
+
+  <div class="profile-tabs">
+    <button class="tab-btn active" data-tab="predictions-tab">
+      <i class="fas fa-crystal-ball"></i> Predictions (<%= predictions.length %>)
+    </button>
+    <button class="tab-btn" data-tab="bets-tab">
+      <i class="fas fa-hand-point-up"></i> Bets (<%= bets.length %>)
+    </button>
+  </div>
+
+  <div id="predictions-tab" class="tab-content active">
+    <% if (predictions.length === 0) { %>
+      <div class="empty-state">
+        <i class="fas fa-crystal-ball empty-icon"></i>
+        <h3>No predictions yet</h3>
+        <p><%= isOwner ? "You haven't created any predictions yet." : "This user hasn't created any predictions yet." %></p>
+        <% if (isOwner) { %>
+          <a href="/predictions/create" class="btn btn-primary"><i class="fas fa-plus"></i> Create Your First Prediction</a>
+        <% } %>
+      </div>
+    <% } else { %>
+      <div class="profile-predictions-list">
+        <% predictions.forEach(function(p) { %>
+          <a href="/predictions/<%= p.id %>" class="profile-prediction-item">
+            <div class="profile-prediction-info">
+              <span class="category-badge-sm"><%= p.category %></span>
+              <h4><%= p.title %></h4>
+              <div class="profile-prediction-meta">
+                <span><i class="fas fa-coins"></i> <%= p.stake %> staked</span>
+                <span><i class="fas fa-clock"></i> <%= timeAgo(p.created_at) %></span>
+                <span class="status-badge-sm status-<%= p.status %>"><%= p.status %></span>
+              </div>
+            </div>
+          </a>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+
+  <div id="bets-tab" class="tab-content">
+    <% if (bets.length === 0) { %>
+      <div class="empty-state">
+        <i class="fas fa-hand-point-up empty-icon"></i>
+        <h3>No bets yet</h3>
+        <p><%= isOwner ? "You haven't placed any bets yet." : "This user hasn't placed any bets yet." %></p>
+        <% if (isOwner) { %>
+          <a href="/" class="btn btn-primary"><i class="fas fa-compass"></i> Browse Predictions</a>
+        <% } %>
+      </div>
+    <% } else { %>
+      <div class="bets-table-wrapper">
+        <table class="bets-table">
+          <thead>
+            <tr>
+              <th>Prediction</th>
+              <th>Position</th>
+              <th>Amount</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% bets.forEach(function(bet) { %>
+              <tr>
+                <td>
+                  <a href="/predictions/<%= bet.prediction_id %>" class="bet-prediction-link">
+                    <%= bet.prediction_title || 'Prediction #' + bet.prediction_id %>
+                  </a>
+                </td>
+                <td>
+                  <span class="position-badge position-badge-<%= bet.position %>">
+                    <i class="fas <%= bet.position === 'yes' ? 'fa-thumbs-up' : 'fa-thumbs-down' %>"></i>
+                    <%= bet.position.toUpperCase() %>
+                  </span>
+                </td>
+                <td><strong><%= bet.amount %></strong> credits</td>
+                <td><%= timeAgo(bet.created_at) %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        tabBtns.forEach(function(b) { b.classList.remove('active'); });
+        document.querySelectorAll('.tab-content').forEach(function(tc) { tc.classList.remove('active'); });
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+  });
+</script>
+
+<%- include('partials/footer') %>

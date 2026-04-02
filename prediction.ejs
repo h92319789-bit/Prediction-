@@ -1,0 +1,209 @@
+<%
+  const title = prediction.title;
+  function timeAgo(date) {
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + 'm ago';
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + 'h ago';
+    const days = Math.floor(hours / 24);
+    if (days < 30) return days + 'd ago';
+    const months = Math.floor(days / 30);
+    if (months < 12) return months + 'mo ago';
+    return Math.floor(months / 12) + 'y ago';
+  }
+  function formatDate(date) {
+    return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+  const statusColors = { active: '#10b981', locked: '#f59e0b', resolved: '#6366f1', cancelled: '#ef4444' };
+  const statusIcons = { active: 'fa-circle-check', locked: 'fa-lock', resolved: 'fa-flag-checkered', cancelled: 'fa-ban' };
+%>
+<%- include('partials/header') %>
+
+<div class="container">
+  <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Predictions</a>
+
+  <% if (typeof success !== 'undefined' && success) { %>
+    <div class="alert alert-success">
+      <i class="fas fa-check-circle"></i> <%= success %>
+    </div>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-danger">
+      <i class="fas fa-exclamation-circle"></i> <%= error %>
+    </div>
+  <% } %>
+
+  <% if (prediction.status === 'resolved') { %>
+    <div class="resolution-banner resolution-<%= prediction.outcome ? 'yes' : 'no' %>">
+      <div class="resolution-icon">
+        <i class="fas <%= prediction.outcome ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
+      </div>
+      <div class="resolution-content">
+        <h3>Resolved: <%= prediction.outcome ? 'YES' : 'NO' %></h3>
+        <% if (prediction.resolution_note) { %>
+          <p><%= prediction.resolution_note %></p>
+        <% } %>
+        <span class="resolution-meta">Resolved on <%= formatDate(prediction.resolved_at) %></span>
+      </div>
+    </div>
+  <% } %>
+
+  <div class="prediction-detail-card">
+    <div class="prediction-detail-header">
+      <div class="prediction-badges">
+        <span class="category-badge"><%= prediction.category %></span>
+        <span class="status-badge" style="background: <%= statusColors[prediction.status] %>20; color: <%= statusColors[prediction.status] %>; border: 1px solid <%= statusColors[prediction.status] %>40;">
+          <i class="fas <%= statusIcons[prediction.status] %>"></i> <%= prediction.status.charAt(0).toUpperCase() + prediction.status.slice(1) %>
+        </span>
+      </div>
+      <h1 class="prediction-detail-title"><%= prediction.title %></h1>
+      <div class="prediction-meta">
+        <a href="/profile/<%= prediction.author_username %>" class="prediction-author">
+          <i class="fas fa-user-circle"></i> <%= prediction.author_username %>
+        </a>
+        <span class="prediction-date"><i class="fas fa-calendar"></i> <%= formatDate(prediction.created_at) %></span>
+        <span class="prediction-views"><i class="fas fa-eye"></i> <%= prediction.views || 0 %> views</span>
+      </div>
+    </div>
+
+    <div class="prediction-detail-body">
+      <p class="prediction-description"><%= prediction.description %></p>
+    </div>
+
+    <div class="probability-section">
+      <h4><i class="fas fa-chart-line"></i> Creator's Estimated Probability</h4>
+      <div class="probability-meter">
+        <div class="probability-bar-large">
+          <div class="probability-fill-large" style="width: <%= prediction.probability %>%">
+            <span class="probability-label"><%= prediction.probability %>%</span>
+          </div>
+        </div>
+        <div class="probability-endpoints">
+          <span>0%</span>
+          <span>100%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stake-display">
+      <i class="fas fa-coins"></i> Creator staked <strong><%= prediction.stake %> credits</strong>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value"><%= totalPool %></div>
+      <div class="stat-label"><i class="fas fa-piggy-bank"></i> Total Pool</div>
+    </div>
+    <div class="stat-card stat-yes">
+      <div class="stat-value"><%= yesPool %></div>
+      <div class="stat-label"><i class="fas fa-thumbs-up"></i> Yes Pool</div>
+    </div>
+    <div class="stat-card stat-no">
+      <div class="stat-value"><%= noPool %></div>
+      <div class="stat-label"><i class="fas fa-thumbs-down"></i> No Pool</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><%= bets.length %></div>
+      <div class="stat-label"><i class="fas fa-users"></i> Total Bettors</div>
+    </div>
+  </div>
+
+  <% if (prediction.status === 'active' && user && user.id !== prediction.author_id) { %>
+    <div class="bet-form-card">
+      <h3><i class="fas fa-hand-point-up"></i> Place Your Bet</h3>
+      <% if (typeof userBetTotal !== 'undefined' && userBetTotal > 0) { %>
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i> You've already bet <strong><%= userBetTotal %> credits</strong> on this prediction.
+        </div>
+      <% } %>
+      <form action="/predictions/<%= prediction.id %>/bet" method="POST" class="bet-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="form-group">
+          <label class="form-label">Your Position</label>
+          <div class="position-toggle">
+            <input type="radio" name="position" id="pos-yes" value="yes" checked class="position-radio">
+            <label for="pos-yes" class="position-btn position-yes">
+              <i class="fas fa-thumbs-up"></i> Yes
+            </label>
+            <input type="radio" name="position" id="pos-no" value="no" class="position-radio">
+            <label for="pos-no" class="position-btn position-no">
+              <i class="fas fa-thumbs-down"></i> No
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="amount" class="form-label">Bet Amount (credits)</label>
+          <input type="number" id="amount" name="amount" class="form-input" min="1" max="<%= user.credits %>" value="10" required>
+          <span class="form-hint">Your balance: <strong><%= user.credits %> credits</strong></span>
+        </div>
+
+        <div class="payout-estimate">
+          <i class="fas fa-calculator"></i>
+          <span>Potential payout will depend on the final pool distribution</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fas fa-coins"></i> Place Bet
+        </button>
+      </form>
+    </div>
+  <% } %>
+
+  <% if (!user && prediction.status === 'active') { %>
+    <div class="bet-form-card">
+      <div class="login-prompt">
+        <i class="fas fa-lock"></i>
+        <p><a href="/login">Log in</a> or <a href="/signup">sign up</a> to place a bet on this prediction.</p>
+      </div>
+    </div>
+  <% } %>
+
+  <div class="bets-section">
+    <h3><i class="fas fa-list"></i> Bets (<%= bets.length %>)</h3>
+    <% if (bets.length === 0) { %>
+      <div class="empty-state-small">
+        <i class="fas fa-ghost"></i>
+        <p>No bets placed yet. Be the first!</p>
+      </div>
+    <% } else { %>
+      <div class="bets-table-wrapper">
+        <table class="bets-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Position</th>
+              <th>Amount</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% bets.forEach(function(bet) { %>
+              <tr>
+                <td>
+                  <a href="/profile/<%= bet.username %>" class="bet-user">
+                    <i class="fas fa-user-circle"></i> <%= bet.username %>
+                  </a>
+                </td>
+                <td>
+                  <span class="position-badge position-badge-<%= bet.position %>">
+                    <i class="fas <%= bet.position === 'yes' ? 'fa-thumbs-up' : 'fa-thumbs-down' %>"></i>
+                    <%= bet.position.toUpperCase() %>
+                  </span>
+                </td>
+                <td><strong><%= bet.amount %></strong> credits</td>
+                <td><%= timeAgo(bet.created_at) %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

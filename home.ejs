@@ -1,0 +1,146 @@
+<%
+  const title = 'Home';
+  function timeAgo(date) {
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + 'm ago';
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + 'h ago';
+    const days = Math.floor(hours / 24);
+    if (days < 30) return days + 'd ago';
+    const months = Math.floor(days / 30);
+    if (months < 12) return months + 'mo ago';
+    return Math.floor(months / 12) + 'y ago';
+  }
+  function categoryColor(cat) {
+    const colors = {
+      'Politics': '#ef4444',
+      'Technology': '#6366f1',
+      'Science': '#10b981',
+      'Sports': '#f59e0b',
+      'Entertainment': '#ec4899',
+      'Finance': '#14b8a6',
+      'World Events': '#f97316',
+      'Other': '#64748b'
+    };
+    return colors[cat] || '#64748b';
+  }
+%>
+<%- include('partials/header') %>
+
+<% if (!user) { %>
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <h1 class="hero-title">Predict the Future</h1>
+      <p class="hero-subtitle">Make predictions about real-world events, bet with virtual credits, and climb the leaderboard. Prove you can see what's coming.</p>
+      <div class="hero-actions">
+        <a href="/signup" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Sign Up Free</a>
+        <a href="#predictions" class="btn btn-outline btn-lg"><i class="fas fa-compass"></i> Browse Predictions</a>
+      </div>
+      <p class="hero-note"><i class="fas fa-coins"></i> Start with 50 free credits &mdash; no real money involved</p>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section id="predictions" class="predictions-section">
+  <div class="container">
+    <form class="filter-bar" method="GET" action="/">
+      <div class="filter-group">
+        <select name="category" class="form-select">
+          <option value="">All Categories</option>
+          <% categories.forEach(function(cat) { %>
+            <option value="<%= cat %>" <%= currentCategory === cat ? 'selected' : '' %>><%= cat %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="filter-group filter-search">
+        <i class="fas fa-search filter-search-icon"></i>
+        <input type="text" name="search" class="form-input" placeholder="Search predictions..." value="<%= currentSearch || '' %>">
+      </div>
+      <div class="filter-group">
+        <select name="sort" class="form-select">
+          <option value="newest" <%= currentSort === 'newest' ? 'selected' : '' %>>Newest</option>
+          <option value="popular" <%= currentSort === 'popular' ? 'selected' : '' %>>Most Popular</option>
+          <option value="stake" <%= currentSort === 'stake' ? 'selected' : '' %>>Highest Stake</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+    </form>
+
+    <div class="stats-bar">
+      <span class="stats-item"><i class="fas fa-chart-bar"></i> <strong><%= total %></strong> active prediction<%= total !== 1 ? 's' : '' %></span>
+    </div>
+
+    <% if (predictions.length === 0) { %>
+      <div class="empty-state">
+        <i class="fas fa-crystal-ball empty-icon"></i>
+        <h3>No predictions found</h3>
+        <p>Try adjusting your filters or be the first to create one!</p>
+        <% if (user) { %>
+          <a href="/predictions/create" class="btn btn-primary"><i class="fas fa-plus"></i> Create Prediction</a>
+        <% } %>
+      </div>
+    <% } else { %>
+      <div class="prediction-grid">
+        <% predictions.forEach(function(p) { %>
+          <a href="/predictions/<%= p.id %>" class="prediction-card">
+            <div class="card-header">
+              <span class="category-badge" style="background: <%= categoryColor(p.category) %>20; color: <%= categoryColor(p.category) %>; border: 1px solid <%= categoryColor(p.category) %>40;">
+                <%= p.category %>
+              </span>
+              <span class="card-time"><%= timeAgo(p.created_at) %></span>
+            </div>
+            <h3 class="card-title"><%= p.title %></h3>
+            <p class="card-description"><%= p.description ? p.description.substring(0, 120) + (p.description.length > 120 ? '...' : '') : '' %></p>
+            <div class="card-author">
+              <i class="fas fa-user-circle"></i> <%= p.author_username || 'Unknown' %>
+            </div>
+            <div class="probability-bar-container">
+              <div class="probability-labels">
+                <span>Probability</span>
+                <span><%= p.probability %>%</span>
+              </div>
+              <div class="probability-bar">
+                <div class="probability-fill" style="width: <%= p.probability %>%"></div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-stat" title="Creator Stake"><i class="fas fa-coins"></i> <%= p.stake %></span>
+              <span class="card-stat" title="Total Pool"><i class="fas fa-piggy-bank"></i> <%= p.total_pool || p.stake %></span>
+              <span class="card-stat" title="Total Bets"><i class="fas fa-users"></i> <%= p.total_bets || 0 %></span>
+            </div>
+          </a>
+        <% }); %>
+      </div>
+
+      <% if (totalPages > 1) { %>
+        <div class="pagination">
+          <% if (page > 1) { %>
+            <a href="?page=<%= page - 1 %>&category=<%= currentCategory || '' %>&search=<%= currentSearch || '' %>&sort=<%= currentSort || 'newest' %>" class="pagination-btn">
+              <i class="fas fa-chevron-left"></i> Prev
+            </a>
+          <% } %>
+          <% for (let i = 1; i <= totalPages; i++) { %>
+            <% if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) { %>
+              <a href="?page=<%= i %>&category=<%= currentCategory || '' %>&search=<%= currentSearch || '' %>&sort=<%= currentSort || 'newest' %>" class="pagination-btn <%= i === page ? 'active' : '' %>">
+                <%= i %>
+              </a>
+            <% } else if (i === page - 3 || i === page + 3) { %>
+              <span class="pagination-ellipsis">&hellip;</span>
+            <% } %>
+          <% } %>
+          <% if (page < totalPages) { %>
+            <a href="?page=<%= page + 1 %>&category=<%= currentCategory || '' %>&search=<%= currentSearch || '' %>&sort=<%= currentSort || 'newest' %>" class="pagination-btn">
+              Next <i class="fas fa-chevron-right"></i>
+            </a>
+          <% } %>
+        </div>
+      <% } %>
+    <% } %>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

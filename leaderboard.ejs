@@ -1,0 +1,81 @@
+<%
+  const title = 'Leaderboard';
+  function getMedalIcon(rank) {
+    if (rank === 1) return '<i class="fas fa-medal" style="color: #fbbf24;"></i>';
+    if (rank === 2) return '<i class="fas fa-medal" style="color: #94a3b8;"></i>';
+    if (rank === 3) return '<i class="fas fa-medal" style="color: #cd7f32;"></i>';
+    return '<span class="rank-number">' + rank + '</span>';
+  }
+%>
+<%- include('partials/header') %>
+
+<div class="container">
+  <div class="page-header">
+    <h1><i class="fas fa-trophy"></i> Leaderboard</h1>
+    <p>See who's leading the pack in predictions and credits.</p>
+  </div>
+
+  <div class="leaderboard-grid">
+    <div class="card leaderboard-card">
+      <div class="leaderboard-header">
+        <h2><i class="fas fa-coins"></i> Richest Predictors</h2>
+        <p>Ranked by total credits</p>
+      </div>
+      <% if (byCredits.length === 0) { %>
+        <div class="empty-state-small">
+          <p>No users yet.</p>
+        </div>
+      <% } else { %>
+        <div class="leaderboard-list">
+          <% byCredits.forEach(function(entry, index) { %>
+            <div class="leaderboard-row <%= user && user.id === entry.id ? 'leaderboard-highlight' : '' %> <%= index < 3 ? 'leaderboard-top' : '' %>">
+              <div class="leaderboard-rank">
+                <%- getMedalIcon(index + 1) %>
+              </div>
+              <div class="leaderboard-user">
+                <a href="/profile/<%= entry.username %>">
+                  <i class="fas fa-user-circle"></i> <%= entry.username %>
+                </a>
+              </div>
+              <div class="leaderboard-value">
+                <i class="fas fa-coins"></i> <%= entry.credits %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="card leaderboard-card">
+      <div class="leaderboard-header">
+        <h2><i class="fas fa-bullseye"></i> Most Accurate</h2>
+        <p>Ranked by prediction accuracy (min. 5 resolved)</p>
+      </div>
+      <% if (byAccuracy.length === 0) { %>
+        <div class="empty-state-small">
+          <p>Not enough resolved predictions yet.</p>
+        </div>
+      <% } else { %>
+        <div class="leaderboard-list">
+          <% byAccuracy.forEach(function(entry, index) { %>
+            <div class="leaderboard-row <%= user && user.id === entry.id ? 'leaderboard-highlight' : '' %> <%= index < 3 ? 'leaderboard-top' : '' %>">
+              <div class="leaderboard-rank">
+                <%- getMedalIcon(index + 1) %>
+              </div>
+              <div class="leaderboard-user">
+                <a href="/profile/<%= entry.username %>">
+                  <i class="fas fa-user-circle"></i> <%= entry.username %>
+                </a>
+              </div>
+              <div class="leaderboard-value">
+                <i class="fas fa-bullseye"></i> <%= entry.accuracy %>%
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

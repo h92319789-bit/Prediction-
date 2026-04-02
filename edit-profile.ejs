@@ -1,0 +1,42 @@
+<%
+  const title = 'Edit Profile';
+%>
+<%- include('partials/header') %>
+
+<div class="container">
+  <a href="/profile/<%= profile.username %>" class="back-link"><i class="fas fa-arrow-left"></i> Back to Profile</a>
+
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <i class="fas fa-user-edit auth-icon"></i>
+        <h1>Edit Profile</h1>
+        <p>Update your profile information</p>
+      </div>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-circle"></i> <%= error %>
+        </div>
+      <% } %>
+
+      <form action="/profile/<%= profile.username %>/edit" method="POST" class="auth-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="form-group">
+          <label for="bio" class="form-label">
+            <i class="fas fa-pen"></i> Bio
+          </label>
+          <textarea id="bio" name="bio" class="form-input form-textarea" placeholder="Tell others about yourself..." maxlength="500" rows="4"><%= profile.bio || '' %></textarea>
+          <span class="form-hint">Max 500 characters</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
