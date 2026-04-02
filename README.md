@@ -88,8 +88,7 @@ A built-in admin account is created on first run:
 
 | Field | Value |
 |-------|-------|
-| **Username** | `Dev1` |
-| **Password** | `johnmccena` |
+|
 
 The admin dashboard is available at `/admin` after logging in with this account.
 
